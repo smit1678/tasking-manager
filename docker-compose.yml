@@ -1,0 +1,17 @@
+ version: '2'
+ services:
+   db:
+     image: mdillon/postgis
+     ports:
+       - "5433:5432"
+   web:
+     image: tasking-manager
+     command: gunicorn -b 0.0.0.0:8000 -w 3 --timeout 59 manage:application
+     environment:
+       - TASKING_MANAGER_DB=postgresql://postgres:@db/iain_gis
+     ports:
+       - "8080:8000"
+     volumes:
+       - .:/src
+     depends_on:
+       - db
