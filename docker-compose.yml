@@ -4,6 +4,8 @@
      image: mdillon/postgis
      ports:
        - "5433:5432"
+     volumes:
+       - ./devops:/devops
    web:
      image: tasking-manager
      command: gunicorn -b 0.0.0.0:8000 -w 3 --timeout 59 manage:application
