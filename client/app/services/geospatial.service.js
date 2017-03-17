@@ -9,7 +9,7 @@
         .service('geospatialService', [geospatialService]);
 
     function geospatialService() {
-        
+
         // Target projection for Turf.js / TM API
         var DATA_PROJECTION = 'EPSG:4326';
 
@@ -18,6 +18,7 @@
 
         var service = {
             getFeaturesFromGeoJSON: getFeaturesFromGeoJSON,
+            getFeatureFromGeoJSON: getFeatureFromGeoJSON,
             getFeaturesFromKML: getFeaturesFromKML,
             getGeoJSONFromFeature: getGeoJSONFromFeature,
             getGeoJSONObjectFromFeature: getGeoJSONObjectFromFeature,
@@ -32,7 +33,7 @@
          * @param {string} geojson
          * @returns {Array.<ol.Feature>}
          */
-        function getFeaturesFromGeoJSON(geojson){
+        function getFeaturesFromGeoJSON(geojson) {
             var format = new ol.format.GeoJSON();
             var features = format.readFeatures(geojson, {
                 dataProjection: DATA_PROJECTION,
@@ -42,11 +43,25 @@
         }
 
         /**
+         * Get OL feature from GeoJSON
+         * @param {string} geojson
+         * @returns <ol.Feature>
+         */
+        function getFeatureFromGeoJSON(geojson) {
+            var format = new ol.format.GeoJSON();
+            var feature = format.readFeature(geojson, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            });
+            return feature;
+        }
+
+        /**
          * Get OL features from GeoJSON
          * @param {string} kml
          * @returns {Array.<ol.Feature>}
          */
-        function getFeaturesFromKML(kml){
+        function getFeaturesFromKML(kml) {
             var format = new ol.format.KML({
                 extractStyles: false,
                 showPointNames: false
@@ -63,7 +78,7 @@
          * @param ol.Feature
          * @returns {string} geojson
          */
-        function getGeoJSONFromFeature(feature){
+        function getGeoJSONFromFeature(feature) {
             var format = new ol.format.GeoJSON();
             var geojson = format.writeFeature(feature, {
                 dataProjection: DATA_PROJECTION,
@@ -77,7 +92,7 @@
          * @param ol.Feature
          * @returns {object} geojson
          */
-        function getGeoJSONObjectFromFeature(feature){
+        function getGeoJSONObjectFromFeature(feature) {
             var format = new ol.format.GeoJSON();
             var geojsonObject = format.writeFeatureObject(feature, {
                 dataProjection: DATA_PROJECTION,
@@ -91,7 +106,7 @@
          * @param features
          * @returns {string} geojson
          */
-        function getGeoJSONFromFeatures(features){
+        function getGeoJSONFromFeatures(features) {
             var format = new ol.format.GeoJSON();
             var geojson = format.writeFeatures(features, {
                 dataProjection: DATA_PROJECTION,
@@ -105,7 +120,7 @@
          * @param features
          * @returns {object} geojson
          */
-        function getGeoJSONObjectFromFeatures(features){
+        function getGeoJSONObjectFromFeatures(features) {
             var format = new ol.format.GeoJSON();
             var geojsonObject = format.writeFeaturesObject(features, {
                 dataProjection: DATA_PROJECTION,
