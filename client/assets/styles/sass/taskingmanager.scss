@@ -1,3 +1,5 @@
+@import "variables";
+
 /**
  * Bourbon for extended SASS functionality:
  * http://bourbon.io/
@@ -18,9 +20,14 @@
 /**
  * Custom
  */
+@import "about";
 @import "admin";
+@import "contribute";
 @import "helpers";
 @import "landingpage";
+@import "learn";
 @import "map";
 @import "progressbar";
+@import "project";
+@import "profile";
 @import "structure";

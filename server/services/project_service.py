@@ -1,63 +1,78 @@
-import geojson
-from server.models.project import AreaOfInterest, Project, InvalidGeoJson, Task, InvalidData
+from flask import current_app
+from server.models.dtos.project_dto import ProjectDTO
+from server.models.postgis.project import Project, ProjectStatus
+from server.models.postgis.utils import NotFound
+from server.services.user_service import UserService
+
+
+class ProjectServiceError(Exception):
+    """ Custom Exception to notify callers an error occurred when handling projects """
+    def __init__(self, message):
+        if current_app:
+            current_app.logger.error(message)
 
 
 class ProjectService:
 
-    def create_draft_project(self, project_name, aoi_geojson, tasks_geojson):
+    project = Project
+
+    @classmethod
+    def from_project_id(cls, project_id):
         """
-        Validates and then persists draft projects in the DB
-        :param project_name: Name the Project Manager has given the project
-        :param aoi_geojson: Area Of Interest Geometry as a geoJSON multipolygon
-        :param tasks_geojson: All tasks associated with the project as a geoJSON feature collection
-        :raises InvalidGeoJson
-        :returns ID of new draft project
+        Constructs service for supplied project
+        :param project_id: ID of project in scope
+        :raises NotFound if project doesn't exist in the DB
         """
-        try:
-            area_of_interest = AreaOfInterest(aoi_geojson)
-        except InvalidGeoJson as e:
-            raise e
+        cls.project = Project.get(project_id)
 
-        try:
-            draft_project = Project(project_name, area_of_interest)
-        except InvalidData as e:
-            raise e
+        if cls.project is None:
+            raise NotFound()
 
-        self._attach_tasks_to_project(draft_project, tasks_geojson)
+        return cls()
 
-        draft_project.create()
-        return draft_project.id
+    @staticmethod
+    def get_project_by_id(project_id: int) -> Project:
+        project = Project.get(project_id)
 
-    def get_project_by_id(self, project_id):
+        if project is None:
+            raise NotFound()
+
+        return project
+
+    @staticmethod
+    def get_project_dto_for_mapper(project_id, locale='en') -> ProjectDTO:
         """
-        Retrieve the specified project from the database
-        :param project_id: ID in scope
-        :return: project_dto suitable for serialization to JSON
+        Get the project DTO for mappers
+        :param project_id: ID of the Project mapper has requested
+        :param locale: Locale the mapper has requested
+        :raises ProjectServiceError, NotFound
         """
-        return Project.as_dto(project_id)
+        project = ProjectService.get_project_by_id(project_id)
 
-    def _attach_tasks_to_project(self, draft_project, tasks_geojson):
-        """
-        Validates then iterates over the array of tasks and attach them to the draft project
-        :param draft_project: Draft project in scope
-        :param tasks_geojson: GeoJSON feature collection of mapping tasks
-        :raises InvalidGeoJson, InvalidData
-        """
-        tasks = geojson.loads(tasks_geojson)
+        if ProjectStatus(project.status) != ProjectStatus.PUBLISHED:
+            raise ProjectServiceError(f'Project {project.id} is not published')
 
-        if type(tasks) is not geojson.FeatureCollection:
-            raise InvalidGeoJson('Tasks: Invalid GeoJson must be FeatureCollection')
+        return project.as_dto_for_mapping(locale)
 
-        is_valid_geojson = geojson.is_valid(tasks)
-        if is_valid_geojson['valid'] == 'no':
-            raise InvalidGeoJson(f"Tasks: Invalid FeatureCollection - {is_valid_geojson['message']}")
+    @staticmethod
+    def is_user_permitted_to_map(project_id: int, user_id: int):
+        """ Check if the user is allowed to map the on the project in scope """
+        # TODO check if allowed user for private project
+        # TODO check level if enforce mapper level
+        project = ProjectService.get_project_by_id(project_id)
 
-        task_id = 1
-        for feature in tasks['features']:
-            try:
-                task = Task(task_id, feature)
-            except (InvalidData, InvalidGeoJson) as e:
-                raise e
+        task_count = project.get_task_count_for_user(user_id)
 
-            draft_project.tasks.append(task)
-            task_id += 1
+        if task_count > 0:
+            return False, 'User already has a locked task on this project'
+        return True, 'User allowed to map'
+
+    @staticmethod
+    def is_user_permitted_to_validate(project_id, user_id):
+        """ Check if the user is allowed to validate on the project in scope """
+        project = ProjectService.get_project_by_id(project_id)
+
+        if project.enforce_validator_role and not UserService.is_user_validator(user_id):
+            return False, 'User must be a validator to map on this project'
+
+        return True, 'User allowed to validate'

@@ -7,15 +7,15 @@
      */
     angular
         .module('taskingManager')
-        .controller('createProjectController', ['$scope', 'mapService', 'aoiService', 'projectService', createProjectController]);
+        .controller('createProjectController', ['$scope', '$location', 'mapService', 'drawService', 'projectService','geospatialService','accountService','authService', createProjectController]);
+    
+    function createProjectController($scope, $location, mapService, drawService, projectService, geospatialService, accountService, authService) {
 
-    function createProjectController($scope, mapService, aoiService, projectService) {
         var vm = this;
+        vm.map = null;
 
         // Wizard 
         vm.currentStep = '';
-        vm.isTaskGrid = false;
-        vm.isTaskArbitrary = false;
         vm.projectName = '';
         vm.projectNameForm = {};
 
@@ -46,15 +46,45 @@
         vm.createProjectFail = false;
         vm.createProjectSuccess = false;
 
+        // Split tasks
+        vm.drawAndSelectPolygon = null;
+        vm.drawAndSelectPoint = null;
+
+        // Draw interactions
+        vm.modifyInteraction = null;
+        vm.drawPolygonInteraction = null;
+
         activate();
 
         function activate() {
+
+            // Check if the user has the PROJECT_MANAGER or ADMIN role. If not, redirect
+            var session = authService.getSession();
+            if (session){
+                var resultsPromise = accountService.getUser(session.username);
+                resultsPromise.then(function (user) {
+                    // Returned the user successfully. Check the user's role
+                    if (user.role !== 'PROJECT_MANAGER' && user.role !== 'ADMIN'){
+                        $location.path('/');
+                    }
+                }, function(){
+                    // an error occurred, navigate to homepage
+                    $location.path('/');
+                });
+            }
+            
             vm.currentStep = 'area';
 
             mapService.createOSMMap('map');
-            aoiService.initDrawTools();
+            mapService.addGeocoder();
+            vm.map = mapService.getOSMMap();
+            drawService.initInteractions(true, false, false, false, false, true);
+            vm.modifyInteraction = drawService.getModifyInteraction();
+            vm.drawPolygonInteraction = drawService.getDrawPolygonInteraction();
+            vm.drawPolygonInteraction.on('drawstart', function(){
+               drawService.getSource().clear();
+            });
             projectService.init();
-            addGeocoder_();
         }
 
         /**
@@ -65,35 +95,41 @@
             if (wizardStep === 'area'){
                 vm.isTaskGrid = false;
                 vm.isTaskArbitrary = false;
-                aoiService.removeAllFeatures();
                 projectService.removeTaskGrid();
                 vm.currentStep = wizardStep;
+                if (vm.isDrawnAOI){
+                    vm.drawPolygonInteraction.setActive(true);
+                    vm.modifyInteraction.setActive(true);
+                }
             }
-            else if (wizardStep === 'tasks'){
+            else if (wizardStep === 'tasks') {
+                setSplitToolsActive_(false);
                 if (vm.isDrawnAOI) {
-                    var aoiValidationResult = projectService.validateAOI(aoiService.getFeatures());
+                    var aoiValidationResult = projectService.validateAOI(drawService.getSource().getFeatures());
                     vm.isAOIValid = aoiValidationResult.valid;
                     vm.AOIValidationMessage = aoiValidationResult.message;
-
                     if (vm.isAOIValid) {
-                        aoiService.setDrawPolygonActive(false);
-                        aoiService.zoomToExtent();
+                        vm.map.getView().fit(drawService.getSource().getExtent());
                         // Use the current zoom level + a standard offset to determine the default task grid size for the AOI
                         vm.zoomLevelForTaskGridCreation = mapService.getOSMMap().getView().getZoom()
                             + vm.DEFAULT_ZOOM_LEVEL_OFFSET;
                         // Reset the user zoom level offset
                         vm.userZoomLevelOffset = 0;
                         vm.currentStep = wizardStep;
+                        vm.drawPolygonInteraction.setActive(false);
+                        vm.modifyInteraction.setActive(false);
                     }
                 }
                 if (vm.isImportedAOI){
                     // TODO: validate AOI - depends on what API supports! Self-intersecting polygons?
-                    aoiService.setDrawPolygonActive(false);
-                    aoiService.zoomToExtent();
+                    vm.drawPolygonInteraction.setActive(false);
+                    vm.map.getView().fit(drawService.getSource().getExtent());
                     // Use the current zoom level + a standard offset to determine the default task grid size for the AOI
                     vm.zoomLevelForTaskGridCreation = mapService.getOSMMap().getView().getZoom()
                         + vm.DEFAULT_ZOOM_LEVEL_OFFSET;
                     vm.currentStep = wizardStep;
+                    vm.drawPolygonInteraction.setActive(false);
+                    vm.modifyInteraction.setActive(false);
                     // Reset the user zoom level offset
                     vm.userZoomLevelOffset = 0;
                 }
@@ -105,6 +141,7 @@
                 }
             }
             else if (wizardStep === 'review'){
+                setSplitToolsActive_(false);
                 vm.createProjectFailed = false;
                 vm.currentStep = wizardStep;
             }
@@ -150,11 +187,9 @@
          * Draw Area of Interest
          */
         vm.drawAOI = function(){
-            if (!aoiService.getDrawPolygonActive()){
-                aoiService.setDrawPolygonActive(true);
-                vm.isDrawnAOI = true;
-                vm.isImportedAOI = false;
-            }
+            vm.drawPolygonInteraction.setActive(true);
+            vm.isDrawnAOI = true;
+            vm.isImportedAOI = false;
         };
 
         /**
@@ -168,7 +203,7 @@
             projectService.removeTaskGrid();
 
              // Get and set the AOI
-            var areaOfInterest = aoiService.getFeatures();
+            var areaOfInterest = drawService.getSource().getFeatures();
             projectService.setAOI(areaOfInterest);
 
             // Create a task grid
@@ -205,28 +240,26 @@
          */
         vm.import = function (file) {
             // Set drawing an AOI to inactive
-            if (aoiService.getDrawPolygonActive()){
-                aoiService.setDrawPolygonActive(false);
-            }
+            vm.drawPolygonInteraction.setActive(false);
             vm.isImportError = false;
             if (file) {
-                aoiService.removeAllFeatures();
+                drawService.getSource().clear();
                 var fileReader = new FileReader();
                 fileReader.onloadend = function (e) {
                     var data = e.target.result;
                     var uploadedFeatures = null;
                     if (file.name.substr(-4) === 'json') {
-                        uploadedFeatures = getFeaturesFromGeoJSON_(data);
+                        uploadedFeatures = geospatialService.getFeaturesFromGeoJSON(data);
                         setImportedAOI_(uploadedFeatures);
                     }
                     else if (file.name.substr(-3) === 'kml') {
-                        uploadedFeatures = getFeaturesFromKML_(data);
+                        uploadedFeatures = geospatialService.getFeaturesFromKML(data);
                         setImportedAOI_(uploadedFeatures);
                     }
                     else if (file.name.substr(-3) === 'zip') {
                         // Use the Shapefile.js library to read the zipped Shapefile (with GeoJSON as output)
                         shp(data).then(function(geojson){
-                            var uploadedFeatures = getFeaturesFromGeoJSON_(geojson);
+                            var uploadedFeatures = geospatialService.getFeaturesFromGeoJSON(geojson);
                             setImportedAOI_(uploadedFeatures);
                         });
                     }
@@ -255,41 +288,8 @@
             vm.isImportedAOI = true;
             vm.isDrawnAOI = false;
             projectService.setAOI(features);
-            aoiService.setFeatures(features);
-            aoiService.zoomToExtent();
-        }
-
-        /**
-         * Get OL features from GeoJSON
-         * @param data
-         * @returns {Array.<ol.Feature>}
-         * @private
-         */
-        function getFeaturesFromGeoJSON_(data){
-            var format = new ol.format.GeoJSON();
-            var features = format.readFeatures(data, {
-                dataProjection: 'EPSG:4326',
-                featureProjection: 'EPSG:3857'
-            });
-            return features;
-        }
-
-        /**
-         * Get OL features from GeoJSON
-         * @param data
-         * @returns {Array.<ol.Feature>}
-         * @private
-         */
-        function getFeaturesFromKML_(data){
-            var format = new ol.format.KML({
-                extractStyles: false,
-                showPointNames: false
-            });
-            var features = format.readFeatures(data, {
-                dataProjection: 'EPSG:4326',
-                featureProjection: 'EPSG:3857'
-            });
-            return features;
+            drawService.getSource().addFeatures(features);
+            vm.map.getView().fit(drawService.getSource().getExtent());
         }
 
         /**
@@ -297,32 +297,63 @@
          *  After drawing it, the polygon is validated before splitting the intersecting
          *  tasks into smaller tasks
          */
-        vm.drawAndSplitArea = function () {
-            var map = mapService.getOSMMap();
+        vm.drawAndSplitAreaPolygon = function () {
+
+            setSplitToolsActive_(false);
 
             // Draw and select interaction - Polygon
-            var drawAndSelectPolygon = new ol.interaction.Draw({
-                type: "Polygon"
-            });
-            drawAndSelectPolygon.setActive(true);
-            map.addInteraction(drawAndSelectPolygon);
-
-            // After drawing the polygon, validate it and split if valid
-            drawAndSelectPolygon.on('drawend', function (event) {
-                var aoiValidationResult = projectService.validateAOI([event.feature]);
-                // Start an Angular digest cycle manually to update the view
-                $scope.$apply(function () {
-                    vm.isSplitPolygonValid = aoiValidationResult.valid;
-                    vm.splitPolygonValidationMessage = aoiValidationResult.message;
-                    if (vm.isSplitPolygonValid) {
-                        projectService.splitTasks(event.feature);
-                        // Get the number of tasks in project
-                        vm.numberOfTasks = projectService.getNumberOfTasks();
-                        drawAndSelectPolygon.setActive(false);
-                    }
+            if (!vm.drawAndSelectPolygon) {
+                var map = mapService.getOSMMap();
+                vm.drawAndSelectPolygon = new ol.interaction.Draw({
+                    type: "Polygon"
                 });
-            });
+                map.addInteraction(vm.drawAndSelectPolygon);
+                // After drawing the polygon, validate it and split if valid
+                vm.drawAndSelectPolygon.on('drawend', function (event) {
+                    var aoiValidationResult = projectService.validateAOI([event.feature]);
+                    // Start an Angular digest cycle manually to update the view
+                    $scope.$apply(function () {
+                        vm.isSplitPolygonValid = aoiValidationResult.valid;
+                        vm.splitPolygonValidationMessage = aoiValidationResult.message;
+                        if (vm.isSplitPolygonValid) {
+                            projectService.splitTasks(event.feature);
+                            // Get the number of tasks in project
+                            vm.numberOfTasks = projectService.getNumberOfTasks();
+                        }
+                    });
+                });
+            }
+            vm.drawAndSelectPolygon.setActive(true);
         };
+
+         /**
+         *  Lets the user draw point.
+         *  After drawing it, the point is validated before splitting the intersecting
+         *  tasks into smaller tasks
+         */
+         vm.drawAndSplitAreaPoint = function () {
+
+             setSplitToolsActive_(false);
+
+             // Draw and select interaction - Point
+             if (!vm.drawAndSelectPoint) {
+                 var map = mapService.getOSMMap();
+                 vm.drawAndSelectPoint = new ol.interaction.Draw({
+                     type: "Point"
+                 });
+                 map.addInteraction(vm.drawAndSelectPoint);
+                 // After drawing the point, split it
+                 vm.drawAndSelectPoint.on('drawend', function (event) {
+                     // Start an Angular digest cycle manually to update the view
+                     $scope.$apply(function () {
+                         projectService.splitTasks(event.feature);
+                         // Get the number of tasks in project
+                         vm.numberOfTasks = projectService.getNumberOfTasks();
+                     });
+                 });
+             }
+             vm.drawAndSelectPoint.setActive(true);
+         };
 
         /**
          * Create a new project with a project name
@@ -334,9 +365,10 @@
                 var resultsPromise = projectService.createProject(vm.projectName);
                 resultsPromise.then(function (data) {
                     // Project created successfully
-                    // TODO: go to project edit page
                     vm.createProjectFail = false;
                     vm.createProjectSuccess = true;
+                    // Navigate to the edit project page
+                    $location.path('/admin/edit-project/' + data.projectId);
                 }, function(){
                     // Project not created successfully
                     vm.createProjectFail = true;
@@ -349,34 +381,17 @@
         };
 
         /**
-         * Adds a geocoder control to the map
-         * It is using an OpenLayers plugin control
-         * For more info and options, please see https://github.com/jonataswalker/ol3-geocoder
-         * @private
+         * Set split tools to active/inactive
+         * @param boolean
+         * @param private
          */
-        function addGeocoder_(){
-
-            var map =  mapService.getOSMMap();
-
-            // Initialise the geocoder
-            var geocoder = new Geocoder('nominatim', {
-                provider: 'osm',
-                lang: 'en',
-                placeholder: 'Search for ...',
-                targetType: 'glass-button',
-                limit: 5,
-                keepOpen: true,
-                preventDefault: true
-            });
-            map.addControl(geocoder);
-
-            // By setting the preventDefault to false when initialising the Geocoder, you can add your own event
-            // handler which has been done here.
-            geocoder.on('addresschosen', function(evt){
-                map.getView().setCenter(evt.coordinate);
-                // It is assumed that most people will search for cities. Zoom level 12 seems most appropriate
-                map.getView().setZoom(12);
-            });
+        function setSplitToolsActive_(boolean){
+            if (vm.drawAndSelectPolygon){
+                vm.drawAndSelectPolygon.setActive(boolean);
+            }
+            if (vm.drawAndSelectPoint){
+                vm.drawAndSelectPoint.setActive(boolean);
+            }
         }
     }
 })();

@@ -1,0 +1,496 @@
+<div class="inner">
+    <section class="section section--asided">
+        <header class="section__header">
+            <div class="inner">
+                <h1 class="section__title">
+                    Edit project: #{{ editProjectCtrl.project.projectId }} - {{ editProjectCtrl.project.name }}
+                </h1>
+            </div>
+        </header>
+        <div class="section-container edit-project">
+            <div class="section__body">
+                <div class="inner">
+                    <aside class="section__aside-content">
+                        <h1 class="section__aside-title">In this area</h1>
+                        <nav class="section__aside-nav" role="navigation">
+                            <ul class="aside-menu">
+                                <li>
+                                    <a title="Edit description" ng-click="editProjectCtrl.currentSection = 'description'"
+                                       class="aside-menu-item" ng-class="editProjectCtrl.currentSection === 'description' ? 'aside-menu-item--active' : ''">
+                                    Description
+                                    </a>
+                                </li>
+                                <li>
+                                    <a title="Edit instructions" ng-click="editProjectCtrl.currentSection = 'instructions'"
+                                       class="aside-menu-item" ng-class="editProjectCtrl.currentSection === 'instructions' ? 'aside-menu-item--active' : ''">
+                                        Instructions
+                                    </a>
+                                </li>
+                                <li>
+                                    <a title="Edit tags" ng-click="editProjectCtrl.currentSection = 'metadata'"
+                                       class="aside-menu-item" ng-class="editProjectCtrl.currentSection === 'metadata' ? 'aside-menu-item--active' : ''">
+                                        Metadata
+                                    </a>
+                                </li>
+                                <li>
+                                    <a title="Edit priority areas" ng-click="editProjectCtrl.currentSection = 'priorityareas'"
+                                       class="aside-menu-item" ng-class="editProjectCtrl.currentSection === 'priorityareas' ? 'aside-menu-item--active' : ''">
+                                        Priority areas
+                                    </a>
+                                </li>
+                                <li>
+                                    <a title="Edit imagery" ng-click="editProjectCtrl.currentSection = 'imagery'"
+                                       class="aside-menu-item" ng-class="editProjectCtrl.currentSection === 'imagery' ? 'aside-menu-item--active' : ''">
+                                        Imagery
+                                    </a>
+                                </li>
+                                <li>
+                                    <a title="Edit permissions" ng-click="editProjectCtrl.currentSection = 'permissions'"
+                                       class="aside-menu-item" ng-class="editProjectCtrl.currentSection === 'permissions' ? 'aside-menu-item--active' : ''">
+                                        Permissions
+                                    </a>
+                                </li>
+                                <li>
+                                    <a title="Edit settings" ng-click="editProjectCtrl.currentSection = 'settings'"
+                                       class="aside-menu-item" ng-class="editProjectCtrl.currentSection === 'settings' ? 'aside-menu-item--active' : ''">
+                                        Settings
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </aside>
+
+                    <!-- section main content -->
+                    <div class="section__main-content">
+                        <!-- description section -->
+                        <div ng-show="editProjectCtrl.currentSection === 'description'">
+                            <form class="form">
+                                <fieldset class="form__fieldset">
+                                    <div class="form__group">
+                                        <label class="form__label">Status</label>
+                                        <select class="form__control" ng-model="editProjectCtrl.project.projectStatus">
+                                            <option value="PUBLISHED">Published</option>
+                                            <option value="ARCHIVED">Archived</option>
+                                            <option value="DRAFT">Draft</option>
+                                        </select>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Priority</label>
+                                        <select class="form__control" ng-model="editProjectCtrl.project.projectPriority">
+                                            <option value="URGENT">Urgent</option>
+                                            <option value="HIGH">High</option>
+                                            <option value="MEDIUM">Medium</option>
+                                            <option value="LOW">Low</option>
+                                        </select>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Name of the project</label>
+                                        <div class="button-group button-group--horizontal pull-right"
+                                             ng-repeat="locale in editProjectCtrl.locales"
+                                             role="group"
+                                             aria-label="choose default locale">
+                                            <button class="button button--small button--achromic" type="button"
+                                                ng-class="editProjectCtrl.nameLanguage === locale ? 'button--active' : ''"
+                                                ng-click="editProjectCtrl.changeLanguageName(locale)">
+                                                {{ locale }}
+                                            </button>
+                                        </div>
+                                        <div ng-repeat="info in editProjectCtrl.project.projectInfoLocales">
+                                            <div ng-show="info.locale === editProjectCtrl.nameLanguage">
+                                                <input type="text" class="form__control"
+                                                    ng-model="info.name"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Short description</label>
+                                        <div class="button-group button-group--horizontal pull-right"
+                                             ng-repeat="locale in editProjectCtrl.locales"
+                                             role="group"
+                                             aria-label="choose default locale">
+                                            <button class="button button--small button--achromic" type="button"
+                                                ng-class="editProjectCtrl.shortDescriptionLanguage === locale ? 'button--active' : ''"
+                                                ng-click="editProjectCtrl.changeLanguageShortDescription(locale)">
+                                                {{ locale }}
+                                            </button>
+                                        </div>
+                                        <div ng-repeat="info in editProjectCtrl.project.projectInfoLocales">
+                                            <div ng-show="info.locale === editProjectCtrl.shortDescriptionLanguage">
+                                               <textarea
+                                                       class="form__control"
+                                                       ng-model="info.shortDescription" rows="4">
+                                                 </textarea>
+                                                <p><strong>Tip:</strong> You can use Markdown. (HTML is not allowed)</p>
+                                                <button class="button button--secondary button--small"
+                                                        ng-click="editProjectCtrl.showPreviewShortDescription = !editProjectCtrl.showPreviewShortDescription">
+                                                        Preview
+                                                </button>
+                                                <p ng-show="editProjectCtrl.showPreviewShortDescription" markdown-to-html="info.shortDescription"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Description</label>
+                                        <div class="button-group button-group--horizontal pull-right"
+                                             ng-repeat="locale in editProjectCtrl.locales"
+                                             role="group"
+                                             aria-label="choose default locale">
+                                            <button class="button button--small button--achromic" type="button"
+                                                ng-class="editProjectCtrl.descriptionLanguage === locale ? 'button--active' : ''"
+                                                ng-click="editProjectCtrl.changeLanguageDescription(locale)">
+                                                {{ locale }}
+                                            </button>
+                                        </div>
+                                        <div ng-repeat="info in editProjectCtrl.project.projectInfoLocales">
+                                            <div ng-show="info.locale === editProjectCtrl.descriptionLanguage">
+                                                <textarea
+                                                        class="form__control"
+                                                        ng-model="info.description" rows="4">
+                                                </textarea>
+                                                <p><strong>Tip:</strong> You can use Markdown. (HTML is not allowed)</p>
+                                                <button class="button button--secondary button--small"
+                                                        ng-click="editProjectCtrl.showPreviewDescription = !editProjectCtrl.showPreviewDescription">
+                                                        Preview
+                                                </button>
+                                                <p ng-show="editProjectCtrl.showPreviewDescription"
+                                                   markdown-to-html="info.description"
+                                                    ng-model="editProjectCtrl.descriptionHTML">
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                        <!--/ description section-->
+                        <!-- instructions section -->
+                        <div ng-show="editProjectCtrl.currentSection === 'instructions'">
+                            <form class="form">
+                                <fieldset class="form__fieldset">
+                                    <div class="form__group">
+                                        <label class="form__label">Entities to map</label>
+                                        <input type="text" class="form__control"/>
+                                        <p>The list of entities to map.</p>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Changeset comment</label>
+                                        <input type="text" class="form__control"/>
+                                        <p>
+                                            Default comments added to uploaded changeset comment field. Users should
+                                            also be encouraged to add text describing what they mapped. Example defaults:
+                                            "#hotosm-guinea-project-470 #missingmaps". Hashtags are sometimes used
+                                            for analysis later, but should be human informative and not overused, #group
+                                            #event for example.
+                                        </p>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Detailed instructions</label>
+                                        <div class="button-group button-group--horizontal pull-right"
+                                             ng-repeat="locale in editProjectCtrl.locales"
+                                             role="group"
+                                             aria-label="choose default locale">
+                                            <button class="button button--small button--achromic" type="button"
+                                                ng-class="editProjectCtrl.instructionsLanguage === locale ? 'button--active' : ''"
+                                                ng-click="editProjectCtrl.changeLanguageInstructions(locale)">
+                                                {{ locale }}
+                                            </button>
+                                        </div>
+                                        <div ng-repeat="info in editProjectCtrl.project.projectInfoLocales">
+                                            <div ng-show="info.locale === editProjectCtrl.instructionsLanguage">
+                                                <textarea
+                                                        class="form__control"
+                                                        ng-model="info.instructions" rows="4">
+                                                </textarea>
+                                                <p><strong>Tip:</strong> You can use Markdown. (HTML is not allowed)</p>
+                                                <button class="button button--secondary button--small"
+                                                        ng-click="editProjectCtrl.showPreviewInstructions = !editProjectCtrl.showPreviewInstructions">
+                                                        Preview
+                                                </button>
+                                                <p ng-show="editProjectCtrl.showPreviewInstructions" markdown-to-html="info.instructions"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Per task instructions (optional)</label>
+                                        <textarea class="form__control" rows="4" ng-model="editProjectCtrl.project.taskInstructions"></textarea>
+                                        <p><strong>Tip:</strong> You can use Markdown. (HTML is not allowed)</p>
+                                        <div ng-show="editProjectCtrl.project.taskInstructions">
+                                            <label class="form__label">Preview</label>
+                                            <p markdown-to-html="editProjectCtrl.project.taskInstructions"></p>
+                                        </div>
+                                    </div>
+                               </fieldset>
+                            </form>
+                        </div>
+                        <!--/ instructions section -->
+                        <!-- metadata section -->
+                        <div ng-show="editProjectCtrl.currentSection === 'metadata'">
+                            <form class="form">
+                                <fieldset class="form__fieldset">
+                                    <p>Metadata and tags are used to allow users to find projects to work on and group projects.</p>
+                                    <div class="form__group">
+                                        <label class="form__label">Mapper level</label>
+                                        <div class="button-group button-group--horizontal" role="group"
+                                             aria-label="choose level mapping">
+                                            <button class="button button--achromic" type="button"
+                                                    ng-class="editProjectCtrl.project.mapperLevel === 'BEGINNER'? 'button--active' : ''"
+                                                    ng-click="editProjectCtrl.setMapperLevel('BEGINNER')">
+                                                Beginner
+                                            </button>
+                                            <button class="button button--achromic" type="button"
+                                                    ng-class="editProjectCtrl.project.mapperLevel === 'INTERMEDIATE'? 'button--active' : ''"
+                                                    ng-click="editProjectCtrl.setMapperLevel('INTERMEDIATE')">
+                                                Intermediate
+                                            </button>
+                                            <button class="button button--achromic" type="button"
+                                                    ng-class="editProjectCtrl.project.mapperLevel === 'ADVANCED'? 'button--active' : ''"
+                                                    ng-click="editProjectCtrl.setMapperLevel('ADVANCED')">
+                                                Advanced
+                                            </button>
+                                        </div>
+                                        <p>Setting the level will help the mappers find suitable projects to work
+                                            on. You can enforce the level required for mapping in the permissions section.</p>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Type(s) of mapping</label>
+                                        <label class="form__option">
+                                            <input type="checkbox"/>Roads
+                                        </label>
+                                        <label class="form__option">
+                                            <input type="checkbox"/>Buildings
+                                        </label>
+                                        <label class="form__option">
+                                            <input type="checkbox"/>Waterways
+                                        </label>
+                                        <label class="form__option">
+                                            <input type="checkbox"/>Land use
+                                        </label>
+                                        <label class="form__option">
+                                            <input type="checkbox"/>Other
+                                        </label>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Organisation tag(s)</label>
+                                        <input type="text" class="form__control" placeholder="Choose from existing tags"/>
+                                    </div>
+                                   <div class="form__input-group">
+                                       <input type="text" class="form__control form__control--medium"
+                                              placeholder="Add a new organisation tag">
+                                       <span class="form__input-group-button">
+                                           <button type="submit" class="button button--achromic button--medium">
+                                               <span>Add tag</span>
+                                           </button>
+                                       </span>
+                                   </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Portfolio tag(s)</label>
+                                        <input type="text" class="form__control" placeholder="Choose from existing tags"/>
+                                    </div>
+                                    <div class="form__input-group">
+                                       <input type="text" class="form__control form__control--medium"
+                                              placeholder="Add a new portfolio tag">
+                                       <span class="form__input-group-button">
+                                           <button type="submit" class="button button--achromic button--medium">
+                                               <span>Add tag</span>
+                                           </button>
+                                       </span>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Region tag(s)</label>
+                                        <input type="text" class="form__control" placeholder="Choose from existing tags"/>
+                                    </div>
+                                     <div class="form__input-group">
+                                       <input type="text" class="form__control form__control--medium"
+                                              placeholder="Add a new region tag">
+                                       <span class="form__input-group-button">
+                                           <button type="submit" class="button button--achromic button--medium">
+                                               <span>Add tag</span>
+                                           </button>
+                                       </span>
+                                    </div>
+                                     <div class="form__group">
+                                        <label class="form__label">Other tag(s)</label>
+                                        <input type="text" class="form__control" placeholder="Choose from existing tags"/>
+                                    </div>
+                                     <div class="form__input-group">
+                                       <input type="text" class="form__control form__control--medium"
+                                              placeholder="Add a new other tag">
+                                       <span class="form__input-group-button">
+                                           <button type="submit" class="button button--achromic button--medium">
+                                               <span>Add tag</span>
+                                           </button>
+                                       </span>
+                                    </div>
+                               </fieldset>
+                            </form>
+                        </div>
+                        <!--/ metadata section -->
+                        <!-- imagery section -->
+                        <div ng-show="editProjectCtrl.currentSection === 'imagery'">
+                            <form class="form">
+                                <fieldset class="form__fieldset">
+                                    <div class="form__group">
+                                        <label class="form__label">URL to service</label>
+                                        <input type="text" class="form__control form__control--medium"/>
+                                        <p>Note: follow this format for TMS URLs: tms[22]:http://hiu-maps.net/hot/1.0.0/kathmandu_flipped/{zoom}/{x}/{y}.png</p>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Status</label>
+                                        <select class="form__control form__control--medium">
+                                            <option>Airbus DS / OSM-FR</option>
+                                            <option>Astrium / UNOSAT</option>
+                                            <option>Hai Phong Satellite Imagery</option>
+                                            <option>NextView</option>
+                                            <option>Public Domain</option>
+                                        </select>
+                                    </div>
+                               </fieldset>
+                            </form>
+                        </div>
+                        <!--/ imagery section -->
+                        <!-- priority area section -->
+                        <div ng-show="editProjectCtrl.currentSection === 'priorityareas'">
+                            <p>{{ editProjectCtrl.numberOfPriorityAreas }} priority areas</p>
+                            <div>
+                                <p>If you want mappers to work on the highest priorty areas first, draw one of more polygons within the project area. </p>
+                            </div>
+                            <div class="button-group button-group--horizontal" role="group" aria-label="priority draw tools">
+                                <button class="button button--achromic"
+                                        ng-class="editProjectCtrl.drawPolygonInteraction.getActive() ? 'button--active' : ''"
+                                        ng-click="editProjectCtrl.drawPriorityPolygon()">Draw polygon</button>
+                                <button class="button button--achromic"
+                                        ng-class="editProjectCtrl.drawRectangleInteraction.getActive() ? 'button--active' : ''"
+                                        ng-click="editProjectCtrl.drawPriorityRectangle()">Draw rectangle</button>
+                                <button class="button button--achromic"
+                                        ng-class="editProjectCtrl.drawCircleInteraction.getActive() ? 'button--active' : ''"
+                                        ng-click="editProjectCtrl.drawPriorityCircle()">Draw circle</button>
+                                <button class="button button--achromic"
+                                        ng-class="editProjectCtrl.editPriority ? 'button--active' : ''"
+                                        ng-click="editProjectCtrl.editPriorityArea()">Edit</button>
+                                <button class="button button--achromic"
+                                        ng-class="editProjectCtrl.deletePriority ? 'button--active' : ''"
+                                        ng-click="editProjectCtrl.deletePriorityArea()">Delete</button>
+                            </div>
+                            <div id="map" class="map-container"></div>
+                        </div>
+                        <!--/ priority area section -->
+                        <!-- permissions -->
+                        <div ng-show="editProjectCtrl.currentSection === 'permissions'">
+                            <form class="form">
+                                <fieldset class="form__fieldset">
+                                    <div class="form__group">
+                                        <label class="form__label">Mapper level</label>
+                                        <label class="form__option">
+                                            <input ng-model="editProjectCtrl.project.enforceMapperLevel" type="checkbox"/>Only mappers with level {{ editProjectCtrl.project.mapperLevel }} can map
+                                        </label>
+                                        <p>If checked, only users with the experienced mapper role will be able to
+                                            contribute tot the current project. If not, anyone can.
+                                            Go to metadata to change the level.
+                                        </p>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Validator level</label>
+                                        <label class="form__option">
+                                            <input ng-model="editProjectCtrl.project.enforceValidatorRole" type="checkbox"/>Only validators can validate
+                                        </label>
+                                        <p>If checked, only users with the validator role will be able to (in)validate
+                                            tasks for the current project. If not, anyone can.</p>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Private project</label>
+                                        <label class="form__option">
+                                            <input ng-model="editProjectCtrl.project.private" type="checkbox"/>Private
+                                        </label>
+                                        <p>Private means that only a given list of users can access this project. In
+                                        order for the user's name to be available to add to the Allowed Users - they
+                                        first must visit the URL for your instance of OSMTM and Authorize access to
+                                        their OpenStreetMap account. After they've done this, their username should be
+                                        available for the administrator to add.</p>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Allowed users</label>
+                                        <div class="form__input-group">
+                                            <input type="text" class="form__control form__control--medium"
+                                                   placeholder="Type a username">
+                                            <span class="form__input-group-button">
+                                                <button type="submit" class="button button--achromic button--medium">
+                                                    <span>Add user</span>
+                                                </button>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                        <!--/ permissions -->
+                        <!-- settings -->
+                        <div ng-show="editProjectCtrl.currentSection === 'settings'">
+                            <form class="form">
+                                <fieldset class="form__fieldset">
+                                    <div class="form__group">
+                                        <label class="form__label">Default locale</label>
+                                         <div class="button-group button-group--horizontal pull-right"
+                                             ng-repeat="locale in editProjectCtrl.locales"
+                                             role="group"
+                                             aria-label="choose default locale">
+                                            <button class="button button--small button--achromic" type="button"
+                                                ng-class="editProjectCtrl.defaultLocale === locale ? 'button--active' : ''"
+                                                ng-click="editProjectCtrl.changeDefaultLocale(locale)">
+                                                {{ locale }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Project due date (dd/mm/yyyy)</label>
+                                        <div class="form__input-group">
+                                            <input type="date" class="form__control form__control--medium"
+                                                   placeholder="dd/mm/yyyy"
+                                                   name="dueDate">
+                                        </div>
+                                        <p>The date after which the project will automatically be archived.</p>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">JOSM preset</label>
+                                        <input type="file" class="form__control"/>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Invalidation</label>
+                                        <div class="alert alert--warning" role="alert">
+                                          <p><strong>Warning:</strong> This cannot be undone.</p>
+                                        </div>
+                                        <button class="button button--secondary" type="button">Invalidate all tasks</button>
+                                        <p>Click this button if project instructions have changed, or if for some
+                                        reason you need to invalidate all done tasks in a single step.</p>
+                                    </div>
+                                    <div class="form__group">
+                                        <label class="form__label">Message all contributors</label>
+                                        <button class="button button--secondary" type="button">Message all contributors</button>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                        <div class="pull-right">
+                            <form class="form">
+                                <div class="form__group">
+                                    <button class="button button--primary" type="button"
+                                            ng-click="editProjectCtrl.saveEdits()">Save changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="pull-right">
+                            <form class="form">
+                                <div class="form__group">
+                                    <p ng-show="editProjectCtrl.updateProjectSuccess">Your project has been updated successfully.</p>
+                                    <p class="error" ng-show="editProjectCtrl.updateProjectFail">There was an error updating your project. Please try again.</p>
+                                </div>
+                            </form>
+                        </div>
+                        <!--/ settings -->
+                    </div>
+                </div>
+            </div>
+            <!--/ section main content -->
+        </div>
+    </section>
+</div>
