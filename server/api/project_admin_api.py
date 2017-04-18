@@ -26,28 +26,15 @@ class ProjectAdminAPI(Resource):
               type: string
               default: Token sessionTokenHere==
             - in: body
-              name: body
+              name: requestBody
               required: true
               description: JSON object for creating draft project
-              schema:
-                  properties:
-                      projectName:
-                          type: string
-                          default: HOT Project
-                      areaOfInterest:
-                          schema:
-                              $ref: "#/definitions/GeoJsonMultiPolygon"
-                      tasks:
-                          schema:
-                              properties:
-                                  type:
-                                      type: string
-                                      default: FeatureCollection
-                                  features:
-                                      type: array
-                                      items:
-                                          schema:
-                                              $ref: "#/definitions/GeoJsonFeature"
+              content:
+                  schema:
+                      properties:
+                          projectName:
+                              type: string
+                              default: test
         responses:
             201:
                 description: Draft project created successfully

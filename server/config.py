@@ -29,6 +29,6 @@ class StagingConfig(EnvironmentConfig):
 
 class DevConfig(EnvironmentConfig):
     APP_BASE_URL = 'http://localhost:5000'
-    API_DOCS_URL = f'{APP_BASE_URL}/api-docs/swagger-ui/index.html?url=http://localhost:5000/api/docs'
+    API_DOCS_URL = f'{APP_BASE_URL}/api-docs/swagger-ui-v3/index.html?url=http://localhost:5000/api/docs'
     LOG_DIR = 'logs'
     LOG_LEVEL = logging.DEBUG
