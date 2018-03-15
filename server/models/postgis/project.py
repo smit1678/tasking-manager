@@ -297,14 +297,18 @@ class Project(db.Model):
         centroid_geojson = db.session.scalar(self.centroid.ST_AsGeoJSON())
         summary.aoi_centroid = geojson.loads(centroid_geojson)
 
-        summary.percent_mapped = round((self.tasks_mapped / (self.total_tasks - self.tasks_bad_imagery)) * 100, 0)
-        summary.percent_validated = round(((self.tasks_validated + self.tasks_bad_imagery) / self.total_tasks) * 100, 0)
+        summary.percent_mapped = int((self.tasks_mapped / (self.total_tasks - self.tasks_bad_imagery)) * 100)
+        summary.percent_validated = int(((self.tasks_validated + self.tasks_bad_imagery) / self.total_tasks) * 100)
 
         project_info = ProjectInfo.get_dto_for_locale(self.id, preferred_locale, self.default_locale)
         summary.name = project_info.name
         summary.short_description = project_info.short_description
 
         return summary
+
+    def get_project_title(self, preferred_locale):
+        project_info = ProjectInfo.get_dto_for_locale(self.id, preferred_locale, self.default_locale)
+        return project_info.name
 
     def get_aoi_geometry_as_geojson(self):
         """ Helper which returns the AOI geometry as a geojson object """
@@ -376,6 +380,12 @@ class Project(db.Model):
         project_dto.project_info = ProjectInfo.get_dto_for_locale(self.id, locale, project.default_locale)
 
         return project_dto
+
+    def all_tasks_as_geojson(self):
+        """ Creates a geojson of all areas """
+        project_tasks = Task.get_tasks_as_geojson_feature_collection(self.id)
+
+        return project_tasks
 
     def as_dto_for_admin(self, project_id):
         """ Creates a Project DTO suitable for transmitting to project admins """

@@ -27,13 +27,13 @@
 
         /**
          * Create an OpenLayers OSM map
-         * with additional layers. 
+         * with additional layers.
          * Supported additional layers:
          *    - XYZ
          *    - WMS
          *    - Bing
          * @param targetElement
-         * @param disableScroll - optional - defaults to false
+         * @param disableScrollZoom - optional - defaults to false
          */
         function createOSMMap(targetElement, disableScrollZoom){
             var scaleLineControl = new ol.control.ScaleLine();
@@ -45,7 +45,7 @@
                 layers: [
                     new ol.layer.Tile({
                         source: new ol.source.OSM({
-                            url: "http://{a-c}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+                            url: "//{a-c}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
                             attributions: "<a href='http://www.openstreetmap.org/copyright/' target='_blank'>© OpenStreetMap</a> contributors"
                         }),
                         title: 'OpenStreetMap',
@@ -177,8 +177,7 @@
             });
             map.addLayer(wmsLayer);
         }
-        
-        
+
         /**
          * Add bing WMS layer
          * @param name
@@ -208,7 +207,7 @@
             });
             map.addLayer(bingLayer);
         }
-        
+
         /**
          * Adds a geocoder control to the map
          * It is using an OpenLayers plugin control
